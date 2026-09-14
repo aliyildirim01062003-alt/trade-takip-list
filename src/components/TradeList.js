@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './TradeList.css';
+import { calculateTradePnL, validateTradeInput } from '../utils/tradeUtils';
 
 const TradeList = ({ trades, onDelete, onUpdate }) => {
   const [editingId, setEditingId] = useState(null);
@@ -7,19 +8,18 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
   const [sortBy, setSortBy] = useState('date');
   const [filterType, setFilterType] = useState('all');
 
-  const calculatePnL = (trade) => {
-    if (!trade.exitPrice) return null;
-    const pnl = (parseFloat(trade.exitPrice) - parseFloat(trade.entryPrice)) * parseFloat(trade.quantity);
-    const commissionTotal = parseFloat(trade.commission || 0);
-    return pnl - commissionTotal;
-  };
-
   const startEdit = (trade) => {
     setEditingId(trade.id);
     setEditForm(trade);
   };
 
   const saveEdit = () => {
+    const validationMessage = validateTradeInput(editForm);
+    if (validationMessage) {
+      alert(validationMessage);
+      return;
+    }
+
     onUpdate(editingId, editForm);
     setEditingId(null);
   };
@@ -36,8 +36,8 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
   let sortedTrades = [...filteredTrades].sort((a, b) => {
     if (sortBy === 'date') return new Date(b.date) - new Date(a.date);
     if (sortBy === 'pnl') {
-      const pnlA = calculatePnL(a) || 0;
-      const pnlB = calculatePnL(b) || 0;
+      const pnlA = calculateTradePnL(a) || 0;
+      const pnlB = calculateTradePnL(b) || 0;
       return pnlB - pnlA;
     }
     return 0;
@@ -49,7 +49,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
     <div className="trade-list-section">
       <div className="section">
         <h2>📋 İşlem Listesi</h2>
-        
+
         <div className="filters">
           <div className="filter-group">
             <label>Varlık Türü:</label>
@@ -77,7 +77,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
         ) : (
           <div className="trades-table">
             {sortedTrades.map(trade => {
-              const pnl = calculatePnL(trade);
+              const pnl = calculateTradePnL(trade);
               const isEditing = editingId === trade.id;
 
               return (
@@ -141,6 +141,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
                           onChange={(e) => handleEditChange('entryPrice', e.target.value)}
                           className="edit-input"
                           step="0.01"
+                          min="0"
                         />
                       ) : (
                         <span>₺{parseFloat(trade.entryPrice).toFixed(2)}</span>
@@ -155,6 +156,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
                           onChange={(e) => handleEditChange('quantity', e.target.value)}
                           className="edit-input"
                           step="0.01"
+                          min="0"
                         />
                       ) : (
                         <span>{parseFloat(trade.quantity).toFixed(2)}</span>
@@ -170,6 +172,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
                             onChange={(e) => handleEditChange('exitPrice', e.target.value)}
                             className="edit-input"
                             step="0.01"
+                            min="0"
                           />
                         ) : (
                           <span>₺{parseFloat(trade.exitPrice).toFixed(2)}</span>
@@ -185,6 +188,7 @@ const TradeList = ({ trades, onDelete, onUpdate }) => {
                           onChange={(e) => handleEditChange('commission', e.target.value)}
                           className="edit-input"
                           step="0.01"
+                          min="0"
                         />
                       ) : (
                         <span>₺{parseFloat(trade.commission || 0).toFixed(2)}</span>

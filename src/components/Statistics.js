@@ -1,5 +1,6 @@
 import React from 'react';
 import './Statistics.css';
+import { calculateTradePnL } from '../utils/tradeUtils';
 
 const Statistics = ({ trades }) => {
   const calculateStats = () => {
@@ -18,14 +19,18 @@ const Statistics = ({ trades }) => {
       };
     }
 
-    const completedTrades = trades.filter(t => t.exitPrice);
+    const completedTrades = trades.filter(t => t.exitPrice !== '' && t.exitPrice !== null && t.exitPrice !== undefined);
     let wins = [];
     let losses = [];
     let totalProfit = 0;
     let totalLoss = 0;
 
     completedTrades.forEach(trade => {
-      const pnl = (parseFloat(trade.exitPrice) - parseFloat(trade.entryPrice)) * parseFloat(trade.quantity) - parseFloat(trade.commission || 0);
+      const pnl = calculateTradePnL(trade);
+      if (pnl === null) {
+        return;
+      }
+
       if (pnl > 0) {
         wins.push(pnl);
         totalProfit += pnl;
@@ -71,7 +76,7 @@ const Statistics = ({ trades }) => {
     <div className="statistics-section">
       <div className="section">
         <h2>📊 İstatistikler</h2>
-        
+
         <div className="stats-grid">
           <StatCard
             title="Toplam İşlem"
@@ -124,8 +129,8 @@ const Statistics = ({ trades }) => {
           <StatCard
             title="Net Kar/Zarar"
             value={`₺${parseFloat(stats.netPnL).toFixed(2)}`}
-            icon={stats.netPnL >= 0 ? "📈" : "📉"}
-            color={stats.netPnL >= 0 ? "profit" : "loss-stat"}
+            icon={stats.netPnL >= 0 ? '📈' : '📉'}
+            color={stats.netPnL >= 0 ? 'profit' : 'loss-stat'}
           />
           <StatCard
             title="Ortalama Kar"
