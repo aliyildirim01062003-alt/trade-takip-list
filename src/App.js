@@ -23,15 +23,15 @@ function App() {
   }, [trades]);
 
   const addTrade = (newTrade) => {
-    setTrades([...trades, { ...newTrade, id: Date.now() }]);
+    setTrades(prevTrades => [...prevTrades, { ...newTrade, id: Date.now() }]);
   };
 
   const deleteTrade = (id) => {
-    setTrades(trades.filter(trade => trade.id !== id));
+    setTrades(prevTrades => prevTrades.filter(trade => trade.id !== id));
   };
 
   const updateTrade = (id, updatedTrade) => {
-    setTrades(trades.map(trade => trade.id === id ? { ...updatedTrade, id } : trade));
+    setTrades(prevTrades => prevTrades.map(trade => trade.id === id ? { ...updatedTrade, id } : trade));
   };
 
   return (

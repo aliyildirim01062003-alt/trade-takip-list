@@ -1,5 +1,5 @@
 import React from 'react';
-import { Line, Pie, Bar } from 'react-chartjs-2';
+import { Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +13,7 @@ import {
   Legend
 } from 'chart.js';
 import './Charts.css';
+import { calculateTradePnL } from '../utils/tradeUtils';
 
 ChartJS.register(
   CategoryScale,
@@ -37,7 +38,7 @@ const Charts = ({ trades }) => {
 
   const getPnLCumulative = () => {
     const sortedTrades = [...trades]
-      .filter(t => t.exitPrice)
+      .filter(t => t.exitPrice !== '' && t.exitPrice !== null && t.exitPrice !== undefined)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     let cumulative = 0;
@@ -45,7 +46,11 @@ const Charts = ({ trades }) => {
     const data = [];
 
     sortedTrades.forEach((trade, index) => {
-      const pnl = (parseFloat(trade.exitPrice) - parseFloat(trade.entryPrice)) * parseFloat(trade.quantity) - parseFloat(trade.commission || 0);
+      const pnl = calculateTradePnL(trade);
+      if (pnl === null) {
+        return;
+      }
+
       cumulative += pnl;
       labels.push(`İşlem ${index + 1}`);
       data.push(cumulative);
@@ -55,12 +60,16 @@ const Charts = ({ trades }) => {
   };
 
   const getWinLossRatio = () => {
-    const completedTrades = trades.filter(t => t.exitPrice);
+    const completedTrades = trades.filter(t => t.exitPrice !== '' && t.exitPrice !== null && t.exitPrice !== undefined);
     let wins = 0;
     let losses = 0;
 
     completedTrades.forEach(trade => {
-      const pnl = (parseFloat(trade.exitPrice) - parseFloat(trade.entryPrice)) * parseFloat(trade.quantity) - parseFloat(trade.commission || 0);
+      const pnl = calculateTradePnL(trade);
+      if (pnl === null) {
+        return;
+      }
+
       if (pnl > 0) wins++;
       else if (pnl < 0) losses++;
     });
@@ -148,7 +157,7 @@ const Charts = ({ trades }) => {
       y: {
         ticks: {
           callback: function(value) {
-            return '₺' + value.toFixed(2);
+            return '₺' + Number(value).toFixed(2);
           }
         }
       }
@@ -159,7 +168,7 @@ const Charts = ({ trades }) => {
     <div className="charts-section">
       <div className="section">
         <h2>📈 Grafikler</h2>
-        
+
         {trades.length === 0 ? (
           <div className="empty-state">
             <p>Grafikleri görmek için işlem eklemeniz gerekir.</p>
@@ -177,7 +186,7 @@ const Charts = ({ trades }) => {
 
             <div className="chart-container">
               <h3>Kazanan vs Kaybeden</h3>
-              {trades.filter(t => t.exitPrice).length > 0 ? (
+              {trades.filter(t => t.exitPrice !== '' && t.exitPrice !== null && t.exitPrice !== undefined).length > 0 ? (
                 <Pie data={winLossChart} options={chartOptions} />
               ) : (
                 <p className="no-data">Kapalı işlem bulunmuyor</p>
