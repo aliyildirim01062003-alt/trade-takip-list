@@ -88,8 +88,10 @@ button { cursor: pointer; }
 .compact-empty { padding: 24px 15px 14px; }
 .state-message { display: flex; justify-content: center; align-items: center; gap: 10px; }
 .spinner { width: 18px; height: 18px; border: 2px solid #dcd9ff; border-top-color: var(--purple); border-radius: 50%; animation: spin .7s linear infinite; }
-.storage-note { margin: 18px 0 0; color: #9ba5b4; text-align: center; font-size: 12px; }
-.storage-note span { margin-right: 4px; color: var(--purple); }
+.storage-note { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 18px 0 0; color: #9ba5b4; text-align: center; font-size: 12px; }
+.storage-note > span > span { margin-right: 4px; color: var(--purple); }
+.storage-note button { border: 0; border-bottom: 1px solid #b9c0c5; padding: 0 0 2px; background: none; color: var(--purple); font-size: 12px; }
+.storage-note button:hover { color: var(--purple-dark); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 600px) {
@@ -110,4 +112,5 @@ button { cursor: pointer; }
   .task-actions button { padding: 6px 4px; }
   .edit-form { flex-wrap: wrap; }
   .edit-form input { flex-basis: 100%; }
+  .storage-note { align-items: center; flex-direction: column; gap: 7px; }
 }

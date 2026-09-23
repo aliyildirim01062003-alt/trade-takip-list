@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 
 const STORAGE_KEY = 'daily-task-tracker.tasks';
+const STORAGE_VERSION_KEY = 'daily-task-tracker.storage-version';
+const STORAGE_BACKUP_KEY = 'daily-task-tracker.last-backup';
+const STORAGE_VERSION = '1';
 
 const getDateKey = (date) => {
   const year = date.getFullYear();
@@ -23,6 +26,18 @@ const formatDate = (date) =>
     year: 'numeric',
   }).format(date);
 
+const normalizeTasks = (value) => {
+  const tasks = value && value.tasks ? value.tasks : value;
+  if (!tasks || typeof tasks !== 'object' || Array.isArray(tasks)) return {};
+  return Object.entries(tasks).reduce((result, [date, dayTasks]) => {
+    if (!Array.isArray(dayTasks)) return result;
+    result[date] = dayTasks.filter(
+      (task) => task && typeof task.id !== 'undefined' && typeof task.title === 'string'
+    ).map((task) => ({ ...task, completed: Boolean(task.completed) }));
+    return result;
+  }, {});
+};
+
 function App() {
   const todayKey = getDateKey(new Date());
   const [selectedDate, setSelectedDate] = useState(todayKey);
@@ -33,12 +48,25 @@ function App() {
   const [filter, setFilter] = useState('all');
   const [period, setPeriod] = useState('week');
   const [isLoading, setIsLoading] = useState(true);
+  const [canPersist, setCanPersist] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     try {
       const savedTasks = window.localStorage.getItem(STORAGE_KEY);
-      if (savedTasks) setTasksByDate(JSON.parse(savedTasks));
+      if (savedTasks) {
+        const parsedTasks = JSON.parse(savedTasks);
+        const storedTasks = parsedTasks && parsedTasks.tasks ? parsedTasks.tasks : parsedTasks;
+        if (!storedTasks || typeof storedTasks !== 'object' || Array.isArray(storedTasks)) {
+          throw new Error('Unsupported task data');
+        }
+        if (!window.localStorage.getItem(STORAGE_BACKUP_KEY)) {
+          window.localStorage.setItem(STORAGE_BACKUP_KEY, savedTasks);
+        }
+        setTasksByDate(normalizeTasks(parsedTasks));
+        window.localStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+      }
+      setCanPersist(true);
     } catch {
       setError('Kayıtlı görevler yüklenemedi. Yeni görevler bu oturumda tutulacak.');
     } finally {
@@ -47,14 +75,29 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && canPersist) {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasksByDate));
       } catch {
         setError('Görevler kaydedilemedi. Tarayıcı depolama alanınızı kontrol edin.');
       }
     }
-  }, [tasksByDate, isLoading]);
+  }, [tasksByDate, isLoading, canPersist]);
+
+  const downloadBackup = () => {
+    const backup = {
+      version: STORAGE_VERSION,
+      exportedAt: new Date().toISOString(),
+      tasksByDate,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `gunluk-gorevler-yedek-${todayKey}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const tasks = tasksByDate[selectedDate] || [];
   const completedCount = tasks.filter((task) => task.completed).length;
@@ -318,7 +361,10 @@ function App() {
             </ul>
           )}
         </section>
-        <p className="storage-note"><span aria-hidden="true">▣</span> Görevlerin bu cihazda güvenle saklanır.</p>
+        <div className="storage-note">
+          <span><span aria-hidden="true">▣</span> Görevlerin bu cihazda güvenle saklanır.</span>
+          <button type="button" onClick={downloadBackup}>Verilerimi indir</button>
+        </div>
       </main>
     </div>
   );
