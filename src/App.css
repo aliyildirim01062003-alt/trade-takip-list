@@ -38,6 +38,12 @@ button { cursor: pointer; }
 .chart-card { margin-bottom: 24px; padding: 24px 26px; }
 .chart-legend { color: var(--muted); font-size: 12px; }
 .legend-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--purple); }
+.period-switcher { display: flex; gap: 4px; margin-top: 18px; padding: 4px; width: fit-content; border: 1px solid var(--line); border-radius: 8px; background: #f7f6f2; }
+.period-switcher button { border: 0; border-radius: 5px; padding: 6px 13px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+.period-switcher button.active { background: #fff; color: var(--purple); box-shadow: 0 1px 3px #26344518; }
+.period-summary { display: flex; align-items: baseline; justify-content: space-between; margin-top: 15px; color: var(--muted); font-size: 12px; }
+.period-summary strong { color: var(--ink); font: 700 17px 'Plus Jakarta Sans', sans-serif; }
+.period-summary strong span { color: var(--muted); font: 500 12px 'DM Sans', sans-serif; }
 .progress-chart { display: flex; gap: 16px; align-items: flex-end; height: 190px; padding-top: 15px; }
 .chart-column { display: flex; flex: 1; min-width: 0; height: 100%; flex-direction: column; align-items: center; }
 .chart-value { min-height: 18px; color: var(--muted); font-size: 10px; }
@@ -95,6 +101,9 @@ button { cursor: pointer; }
   .main-content { padding-top: 25px; }
   .date-heading h2 { font-size: 18px; }
   .progress-card, .task-card { padding: 20px 16px; border-radius: 16px; }
+  .chart-card { padding: 20px 16px; border-radius: 16px; }
+  .progress-chart { gap: 4px; height: 165px; }
+  .chart-value { font-size: 9px; transform: rotate(-45deg); }
   .add-form { flex-direction: column; }
   .add-form button { min-height: 44px; }
   .task-actions { opacity: 1; }

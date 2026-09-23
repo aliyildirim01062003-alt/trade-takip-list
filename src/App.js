@@ -31,6 +31,7 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [filter, setFilter] = useState('all');
+  const [period, setPeriod] = useState('week');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -65,22 +66,33 @@ function App() {
   });
   const selectedDateObject = parseDateKey(selectedDate);
   const isToday = selectedDate === todayKey;
-  const chartData = useMemo(() => {
-    const days = Array.from({ length: 7 }, (_, index) => {
+  const periodData = useMemo(() => {
+    const dayCount = period === 'month' ? 30 : 7;
+    const days = Array.from({ length: dayCount }, (_, index) => {
       const date = new Date(selectedDateObject);
-      date.setDate(date.getDate() - (6 - index));
+      date.setDate(date.getDate() - (dayCount - 1 - index));
       const key = getDateKey(date);
       const dayTasks = tasksByDate[key] || [];
       return {
         key,
-        label: new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(date).replace('.', ''),
+        label: period === 'month'
+          ? (index % 5 === 0 || index === dayCount - 1 ? String(date.getDate()) : '')
+          : new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(date).replace('.', ''),
         dateLabel: `${date.getDate()} ${new Intl.DateTimeFormat('tr-TR', { month: 'short' }).format(date)}`,
         total: dayTasks.length,
         completed: dayTasks.filter((task) => task.completed).length,
       };
     });
-    return { days, max: Math.max(...days.map((day) => day.total), 1) };
-  }, [selectedDateObject, tasksByDate]);
+    return {
+      days,
+      max: Math.max(...days.map((day) => day.total), 1),
+      total: days.reduce((sum, day) => sum + day.total, 0),
+      completed: days.reduce((sum, day) => sum + day.completed, 0),
+    };
+  }, [selectedDateObject, tasksByDate, period]);
+  const periodProgress = periodData.total
+    ? Math.round((periodData.completed / periodData.total) * 100)
+    : 0;
 
   const updateTasks = (nextTasks) => {
     setTasksByDate((current) => ({ ...current, [selectedDate]: nextTasks }));
@@ -193,16 +205,24 @@ function App() {
           <div className="card-heading">
             <div>
               <span className="section-label">GRAFİK</span>
-              <h2 id="weekly-progress-title">Son 7 günlük ilerleme</h2>
+              <h2 id="weekly-progress-title">{period === 'month' ? 'Son 30 günlük ilerleme' : 'Son 7 günlük ilerleme'}</h2>
             </div>
             <div className="chart-legend"><span className="legend-dot" /> Tamamlanan</div>
           </div>
+          <div className="period-switcher" aria-label="İlerleme dönemi">
+            <button type="button" className={period === 'week' ? 'active' : ''} onClick={() => setPeriod('week')} aria-pressed={period === 'week'}>Haftalık</button>
+            <button type="button" className={period === 'month' ? 'active' : ''} onClick={() => setPeriod('month')} aria-pressed={period === 'month'}>Aylık</button>
+          </div>
+          <div className="period-summary">
+            <strong>{periodData.completed} <span>/ {periodData.total} görev</span></strong>
+            <span>{periodProgress}% tamamlandı</span>
+          </div>
           <div className="progress-chart">
-            {chartData.days.map((day) => (
+            {periodData.days.map((day) => (
               <div className="chart-column" key={day.key} title={`${day.dateLabel}: ${day.completed}/${day.total} görev`}>
                 <div className="chart-value">{day.total ? `${day.completed}/${day.total}` : '—'}</div>
                 <div className="chart-bar-area">
-                  <div className="chart-bar total-bar" style={{ height: `${Math.max((day.total / chartData.max) * 100, day.total ? 12 : 3)}%` }}>
+                  <div className="chart-bar total-bar" style={{ height: `${Math.max((day.total / periodData.max) * 100, day.total ? 12 : 3)}%` }}>
                     <div className="chart-bar completed-bar" style={{ height: `${day.total ? (day.completed / day.total) * 100 : 0}%` }} />
                   </div>
                 </div>
