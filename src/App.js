@@ -65,6 +65,22 @@ function App() {
   });
   const selectedDateObject = parseDateKey(selectedDate);
   const isToday = selectedDate === todayKey;
+  const chartData = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(selectedDateObject);
+      date.setDate(date.getDate() - (6 - index));
+      const key = getDateKey(date);
+      const dayTasks = tasksByDate[key] || [];
+      return {
+        key,
+        label: new Intl.DateTimeFormat('tr-TR', { weekday: 'short' }).format(date).replace('.', ''),
+        dateLabel: `${date.getDate()} ${new Intl.DateTimeFormat('tr-TR', { month: 'short' }).format(date)}`,
+        total: dayTasks.length,
+        completed: dayTasks.filter((task) => task.completed).length,
+      };
+    });
+    return { days, max: Math.max(...days.map((day) => day.total), 1) };
+  }, [selectedDateObject, tasksByDate]);
 
   const updateTasks = (nextTasks) => {
     setTasksByDate((current) => ({ ...current, [selectedDate]: nextTasks }));
@@ -171,6 +187,29 @@ function App() {
           <p className="progress-message">
             {tasks.length === 0 ? 'Bugün için bir plan oluşturmaya ne dersin?' : progress === 100 ? 'Harika! Bugünün tüm görevleri tamamlandı.' : 'Devam et, hedeflerine biraz daha yaklaştın.'}
           </p>
+        </section>
+
+        <section className="chart-card" aria-labelledby="weekly-progress-title">
+          <div className="card-heading">
+            <div>
+              <span className="section-label">GRAFİK</span>
+              <h2 id="weekly-progress-title">Son 7 günlük ilerleme</h2>
+            </div>
+            <div className="chart-legend"><span className="legend-dot" /> Tamamlanan</div>
+          </div>
+          <div className="progress-chart">
+            {chartData.days.map((day) => (
+              <div className="chart-column" key={day.key} title={`${day.dateLabel}: ${day.completed}/${day.total} görev`}>
+                <div className="chart-value">{day.total ? `${day.completed}/${day.total}` : '—'}</div>
+                <div className="chart-bar-area">
+                  <div className="chart-bar total-bar" style={{ height: `${Math.max((day.total / chartData.max) * 100, day.total ? 12 : 3)}%` }}>
+                    <div className="chart-bar completed-bar" style={{ height: `${day.total ? (day.completed / day.total) * 100 : 0}%` }} />
+                  </div>
+                </div>
+                <span className="chart-label">{day.label}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="task-card">
